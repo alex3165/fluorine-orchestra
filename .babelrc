@@ -1,0 +1,12 @@
+{
+  "presets": [
+    "babel-preset-philpl"
+  ],
+  "ignore": [
+    "/node_modules/"
+  ],
+  "plugins": [
+    "transform-runtime",
+    "closure-elimination"
+  ]
+}
