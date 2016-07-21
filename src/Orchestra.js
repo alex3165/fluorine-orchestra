@@ -143,7 +143,7 @@ export class Orchestra {
 
             if (missingIds.size) {
               const dependencyStore = stores[dependency]
-              dependency._missing(missingIds)
+              dependency._missing(missingIds, identifier)
             }
           }
 

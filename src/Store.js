@@ -15,7 +15,7 @@ import {
   STORE_UPDATE
 } from './constants/StoreConstants'
 
-const missingSubject = Symbol('missingSubject')
+const missing = Symbol('missingSubject')
 
 export class Store {
   static isStore(obj) {
@@ -25,7 +25,11 @@ export class Store {
   constructor(identifier, opts = {}) {
     invariant(typeof identifier === 'string', 'Store: `identifier` is expected to be a string.')
 
-    this[missingSubject] = new Subject()
+    this[missing] = {
+      subject: new Subject(),
+      cache: {}
+    }
+
     this.identifier = identifier
     this.opts = opts
     this.dependencies = []
@@ -59,7 +63,7 @@ export class Store {
   }
 
   observeMissing() {
-    return this[missingSubject].asObservable()
+    return this[missing].asObservable()
   }
 
   getPre() {
@@ -93,9 +97,18 @@ export class Store {
     return res
   }
 
-  _missing(ids) {
+  _missing(ids, identifier = null) {
+    const { cache, subject } = this[missing]
+
     invariant(Set.isSet(ids), 'Store: `ids` is expected to be an Immutable.Set.')
-    this[missingSubject].next(ids)
+
+    cache[identifier] = ids
+
+    const missingIds = Object
+      .keys(cache)
+      .reduce((acc, x) => acc.union(x), new Set())
+
+    subject.next(missingIds)
   }
 
   _action(primitive) {
