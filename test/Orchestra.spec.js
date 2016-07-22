@@ -4,23 +4,42 @@ import { createStore, createOrchestra } from '../src/index'
 import { fromJS, List, Map } from 'immutable'
 
 describe('Orchestra', () => {
-  it('should throw if no stores are passed', () => {
+  it('throws if no stores are passed', () => {
     expect(() => {
       createOrchestra()
     }).toThrow('Orchestra: constructor expects to receive Stores.')
   })
 
-  it('should throw if multiple stores with the same identifier are passed', () => {
+  it('throws if multiple stores with the same identifier are passed', () => {
     expect(() => {
       createOrchestra(createStore('tests'), createStore('tests'))
     }).toThrow('Orchestra: The identifier `tests` is not unique.')
   })
 
-  it('should throw if sth else than a Fluorine dispathcher is passed to reduce.', () => {
+  it('throws if sth else than a Fluorine dispathcher is passed to reduce.', () => {
     expect(() => {
       createOrchestra(createStore('tests'))
         .reduce({})
     }).toThrow('Orchestra: `dispatcher` is expected to be a Fluorine dispatcher.')
+  })
+
+  it('throws if a dependency is missing', () => {
+    expect(() => {
+      const TestStore = createStore('tests')
+        .dependsOn('nothing', () => '', x => x)
+      createOrchestra(TestStore).reduce(createDispatcher())
+    }).toThrow('Orchestra: Failed to resolve dependency for identifier `nothing`.')
+  })
+
+  it('throws if a circular dependency is found', () => {
+    expect(() => {
+      const StoreA = createStore('a')
+        .dependsOn('b', () => '', x => x)
+      const StoreB = createStore('b')
+        .dependsOn('a', () => '', x => x)
+
+      createOrchestra(StoreA, StoreB).reduce(createDispatcher())
+    }).toThrow('Orchestra: Failed to resolve circular dependency for identifier `a`.')
   })
 
   it('processes modifications on stores correctly', done => {
