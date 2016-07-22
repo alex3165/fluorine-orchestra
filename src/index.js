@@ -1,5 +1,5 @@
-import { Store, createStore } from './Store'
-import { Orchestra, createOrchestra } from './Orchestra'
+import createStore, { Store } from './Store'
+import createOrchestra, { Orchestra } from './Orchestra'
 import createReducerForStore from './util/createReducerForStore'
 import combineStores from './util/combineStores'
 
