@@ -1,6 +1,12 @@
 <p align="center"><img src="https://raw.githubusercontent.com/philpl/fluorine-orchestra/master/docs/intro.gif" width=400></p>
 <p align="center">
 <strong>Smart Collections with Dependency Resolution using <a href="https://facebook.github.io/immutable-js/">Immutable.js</a> for <a href="https://fluorinejs.org/">Fluorine</a>.</strong>
+<br><br>
+<a href="https://travis-ci.org/philpl/fluorine-orchestra"><img src="https://img.shields.io/travis/philpl/fluorine-orchestra/master.svg"></a>
+<a href="https://coveralls.io/github/philpl/fluorine-orchestra"><img src="https://img.shields.io/coveralls/philpl/fluorine-orchestra/master.svg"></a>
+<a href="https://slack.fluorinejs.org/"><img alt="Join Fluorine's Slack!" src="https://slack.fluorinejs.org/badge.svg"></a>
+<a href="https://npmjs.com/package/fluorine-orchestra"><img src="https://img.shields.io/npm/dm/fluorine-orchestra.svg"></a>
+<a href="https://npmjs.com/package/fluorine-orchestra"><img src="https://img.shields.io/npm/v/fluorine-orchestra.svg"></a>
 </p>
 
 # Fluorine Orchestra
