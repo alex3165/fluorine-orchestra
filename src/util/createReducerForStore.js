@@ -13,7 +13,7 @@ import {
   STORE_REMOVE,
   STORE_FILTER,
   STORE_UPDATE
-} from './constants/StoreConstants'
+} from '../constants/StoreConstants'
 
 export default function createReducerForStore(store) {
   invariant(store && Store.isStore(store), 'Reducer: `store` is expected to be an Orchestra.Store.')
