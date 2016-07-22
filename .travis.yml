@@ -7,5 +7,3 @@ script:
 cache:
   directories:
     - node_modules
-notifications:
-  slack: fluorinejs:P3EHgggSER0ZVq6eMOJDoIwM
