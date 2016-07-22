@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { createDispatcher } from 'fluorine-lib'
+import createDispatcher from 'fluorine-lib/lib/createDispatcher'
 import { createStore, createOrchestra } from '../src/index'
 import { fromJS, List, Map } from 'immutable'
 
@@ -138,8 +138,6 @@ describe('Orchestra', () => {
     dispatcher.next(PostStore.insert(post))
     dispatcher.complete()
   })
-
-
 
 })
 
