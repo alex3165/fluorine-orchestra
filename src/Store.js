@@ -33,12 +33,13 @@ export class Store {
     this.identifier = identifier
     this.opts = opts
     this.dependencies = []
+    this.hooks = {}
   }
 
   pre(transformer) {
     invariant(typeof transformer === 'function', 'Store: `transformer` is expected to be a function.')
 
-    this.pre = transformer
+    this.hooks.pre = transformer
     return this
   }
 
@@ -58,7 +59,7 @@ export class Store {
   post(transformer) {
     invariant(typeof transformer === 'function', 'Store: `transformer` is expected to be a function.')
 
-    this.post = transformer
+    this.hooks.post = transformer
     return this
   }
 
@@ -67,7 +68,7 @@ export class Store {
   }
 
   getPre() {
-    return this.pre || (x => x)
+    return this.hooks.pre || (x => x)
   }
 
   getDependencyIdentifiers() {
@@ -76,22 +77,25 @@ export class Store {
   }
 
   getPost() {
-    return this.post || (x => x)
+    return this.hooks.post || (x => x)
   }
 
   useDependencyGetter(identifier, x) {
-    const { getter } = this.dependencies[identifier]
+    const { dependencies } = this
+    const { getter } = dependencies.find(dep => dep.identifier === identifier)
     const res = getter(x)
 
     invariant(
-      typeof x === 'string' || Iterable.isIterable(x),
+      (Iterable.isIterable(res) && res.every(id => typeof id === 'string')) ||
+      typeof res === 'string',
       `Store: The result of ${identifier}'s getter is expected to be an id (string) or an iterable of ids.`)
 
     return res
   }
 
   useDependencySetter(identifier, x, y) {
-    const { setter } = this.dependencies[identifier]
+    const { dependencies } = this
+    const { setter } = dependencies.find(dep => dep.identifier === identifier)
     const res = toMap(setter(x, y))
 
     return res
@@ -100,7 +104,9 @@ export class Store {
   _missing(ids, identifier = null) {
     const { cache, subject } = this[missing]
 
-    invariant(Set.isSet(ids), 'Store: `ids` is expected to be an Immutable.Set.')
+    invariant(
+      Set.isSet(ids) && ids.every(x => typeof x === 'string'),
+      'Store: `ids` is expected to be an Immutable.Set of ids (string).')
 
     cache[identifier] = ids
 
@@ -112,7 +118,7 @@ export class Store {
   }
 
   _action(primitive) {
-    const { identifier } = this.opts
+    const { identifier } = this
     primitive.identifier = identifier
     return primitive
   }

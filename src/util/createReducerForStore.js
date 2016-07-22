@@ -1,5 +1,5 @@
 import invariant from 'invariant'
-import Store from '../Store'
+import { Store } from '../Store'
 import toMap from './toMap'
 
 import {

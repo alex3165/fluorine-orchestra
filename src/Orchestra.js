@@ -7,7 +7,8 @@ import { Observable } from '@reactivex/rxjs'
 import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
 
 import {
-  Iterable
+  Iterable,
+  Set
 } from 'immutable'
 
 const resultCache = Symbol('resultCache')
@@ -91,8 +92,7 @@ export class Orchestra {
       const dependencies = store.getDependencyIdentifiers()
       const post = store.getPost()
 
-      const _dependencies = {}
-      for (const dependency of dependencies) {
+      const _dependencies = dependencies.reduce((acc, dependency) => {
         let _dependency
 
         if (_externals[dependency]) {
@@ -105,47 +105,48 @@ export class Orchestra {
           throw new Error(`Orchestra: Failed to resolve dependency for identifier \`${dependency}\`.`)
         }
 
-        _dependencies[dependency] = _dependency
-      }
+        acc[dependency] = _dependency
+        return acc
+      }, {})
 
       const _store = dispatcher.reduce(reducer)
       const res = combineStores({ ..._dependencies, [identifier]: _store })
         .map(deps => {
-          let state = deps[identifier]
-
           // Resolve all dependencies
-          for (const dependency of dependencies) {
+          const state = dependencies.reduce((acc, dependency) => {
             const dependencyState = deps[dependency]
-            const getter = store.useDependencyGetter.bind(null, dependency)
-            const setter = store.useDependencySetter.bind(null, dependency)
-            let missingIds = new Set()
+            const getter = store.useDependencyGetter.bind(store, dependency)
+            const setter = store.useDependencySetter.bind(store, dependency)
+            let missingIds = []
 
-            state = state.map(x => {
+            const nextState = acc.map(x => {
               const ids = getter(x)
 
               let result
-              if (!Iterable.isIterable(ids)) {
+              if (typeof ids === 'string') {
                 result = dependencyState.get(ids)
+
                 if (!result) {
-                  missingIds = missingIds.add(ids)
+                  missingIds = missingIds.concat(ids)
                   return x
                 }
               } else {
                 result = dependencyState.filter((_, key) => ids.includes(key))
-                if (!result.size) {
-                  missingIds = result.toKeySeq().toSet()
-                  return x
-                }
+                missingIds = missingIds
+                  .concat(ids
+                    .filter(id => !dependencyState.has(id))
+                    .toArray())
               }
 
               return setter(x, result)
             })
 
-            if (missingIds.size) {
-              const dependencyStore = stores[dependency]
-              dependency._missing(missingIds, identifier)
-            }
-          }
+            // Report missing items for ids
+            const dependencyStore = stores[dependency]
+            dependencyStore._missing(new Set(missingIds), identifier)
+
+            return nextState
+          }, deps[identifier])
 
           return state.map(post)
         })
@@ -156,9 +157,11 @@ export class Orchestra {
       return res
     }
 
-    for (const store of stores) {
-      const { identifier } = store
-      _stores[identifier] = resolveStore(store)
+    for (const identifier in stores) {
+      if (stores.hasOwnProperty(identifier)) {
+        const store = stores[identifier]
+        _stores[identifier] = resolveStore(store)
+      }
     }
 
     this[resultCache][dispatcher.identifier] = _stores
