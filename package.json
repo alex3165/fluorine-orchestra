@@ -12,7 +12,7 @@
   "scripts": {
     "test": "BABEL_ENV=commonjs mocha --compilers js:babel-register --recursive",
     "test:watch": "npm test -- --watch",
-    "test:cov": "nyc npm test",
+    "test:cov": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "lint": "eslint src",
     "check": "npm run test && npm run build",
     "clean": "rm -rf lib es",
@@ -27,6 +27,10 @@
   "author": "Phil Plückthun <phil@plckthn.me> (https://github.com/philplckthun)",
   "bugs": {
     "url": "https://github.com/philplckthun/fluorine-orchestra/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/philpl/fluorine-orchestra.git"
   },
   "license": "CC0-1.0",
   "keywords": [
@@ -52,6 +56,7 @@
     "babel-plugin-transform-runtime": "^6.9.0",
     "babel-preset-philpl": "^0.1.0",
     "babel-register": "^6.9.0",
+    "coveralls": "^2.11.11",
     "eslint": "^3.0.1",
     "eslint-config-excellence": "^1.13.0",
     "eslint-plugin-mocha": "^4.1.0",
