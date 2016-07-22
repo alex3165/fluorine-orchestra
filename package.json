@@ -14,7 +14,6 @@
     "test:watch": "npm test -- --watch",
     "test:cov": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
     "lint": "eslint src",
-    "check": "npm run test && npm run build",
     "clean": "rm -rf lib es",
     "build:commonjs": "BABEL_ENV=commonjs babel src --out-dir lib",
     "build:es": "babel src --out-dir es",
@@ -62,9 +61,9 @@
     "eslint-plugin-react": "^5.2.2",
     "expect": "^1.20.2",
     "fluorine-lib": "^4.1.4",
+    "immutable": "^3.8.1",
     "mocha": "^2.5.3",
-    "nyc": "^7.0.0",
-    "immutable": "^3.8.1"
+    "nyc": "^7.0.0"
   },
   "peerDependencies": {
     "fluorine-lib": ">= 4.1.4",
