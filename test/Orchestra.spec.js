@@ -2,7 +2,17 @@ import expect from 'expect'
 import createDispatcher from 'fluorine-lib/lib/createDispatcher'
 import { Observable } from '@reactivex/rxjs'
 import { createStore, createOrchestra } from '../src/index'
+import { Orchestra } from '../src/Orchestra'
 import { fromJS, OrderedMap, List, Map } from 'immutable'
+
+describe('Orchestra.isOrchestra', () => {
+  it('returns if an Orchestra was passed', () => {
+    const TestStore = createStore('tests')
+    expect(Orchestra.isOrchestra(createOrchestra(TestStore))).toExist()
+    expect(Orchestra.isOrchestra({})).toNotExist()
+    expect(Orchestra.isOrchestra()).toNotExist()
+  })
+})
 
 describe('Orchestra', () => {
   it('throws if no stores are passed', () => {
@@ -76,6 +86,18 @@ describe('Orchestra', () => {
     dispatcher.next(TestStore.insert(item))
     dispatcher.next(TestStore.remove(item))
     dispatcher.complete()
+  })
+
+  it('resolves multiple dependencies to a single store correctly', () => {
+    const TestStore = createStore('tests')
+    const AStore = createStore('a')
+      .dependsOn('tests', a => a.get('test'), (a, test) => a.set('test', test))
+    const BStore = createStore('b')
+      .dependsOn('tests', b => b.get('test'), (b, test) => b.set('test', test))
+
+    const orchestra = createOrchestra(AStore, BStore, TestStore)
+    const dispatcher = createDispatcher()
+    orchestra.reduce(dispatcher)
   })
 
   it('resolves dependencies to a single other item', done => {
