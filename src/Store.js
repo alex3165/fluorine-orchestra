@@ -64,7 +64,7 @@ export class Store {
   }
 
   observeMissing() {
-    return this[missing].asObservable()
+    return this[missing].subject.asObservable()
   }
 
   getPre() {
@@ -112,7 +112,10 @@ export class Store {
 
     const missingIds = Object
       .keys(cache)
-      .reduce((acc, x) => acc.union(x), new Set())
+      .reduce((acc, key) => {
+        const ids = cache[key]
+        return ids ? acc.union(ids) : acc
+      }, new Set())
 
     subject.next(missingIds)
   }

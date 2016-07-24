@@ -50,8 +50,8 @@ export class Orchestra {
 
     const { externals, stores } = this
 
-    invariant(stores[identifier], `Orchesta: The identifier \`${identifier}\` is already taken by a Store.`)
-    invariant(externals[identifier], `Orchesta: The identifier \`${identifier}\` is not unique.`)
+    invariant(!stores.hasOwnProperty(identifier), `Orchesta: The identifier \`${identifier}\` is already taken by a Store.`)
+    invariant(!externals.hasOwnProperty(identifier), `Orchesta: The identifier \`${identifier}\` is not unique.`)
 
     externals[identifier] = reducer
     return this
@@ -142,8 +142,10 @@ export class Orchestra {
             })
 
             // Report missing items for ids
-            const dependencyStore = stores[dependency]
-            dependencyStore._missing(new Set(missingIds), identifier)
+            if (stores.hasOwnProperty(dependency)) {
+              const dependencyStore = stores[dependency]
+              dependencyStore._missing(new Set(missingIds), identifier)
+            }
 
             return nextState
           }, deps[identifier])

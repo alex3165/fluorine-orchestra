@@ -1,7 +1,8 @@
 import expect from 'expect'
 import createDispatcher from 'fluorine-lib/lib/createDispatcher'
+import { Observable } from '@reactivex/rxjs'
 import { createStore, createOrchestra } from '../src/index'
-import { fromJS, List, Map } from 'immutable'
+import { fromJS, OrderedMap, List, Map } from 'immutable'
 
 describe('Orchestra', () => {
   it('throws if no stores are passed', () => {
@@ -40,6 +41,15 @@ describe('Orchestra', () => {
 
       createOrchestra(StoreA, StoreB).reduce(createDispatcher())
     }).toThrow('Orchestra: Failed to resolve circular dependency for identifier `a`.')
+  })
+
+  it('caches the reduced stores and outputs the same result on another call', () => {
+    const TestStore = createStore('tests')
+    const dispatcher = createDispatcher()
+    const orchestra = createOrchestra(TestStore)
+
+    expect(orchestra.reduce(dispatcher))
+      .toBe(orchestra.reduce(dispatcher))
   })
 
   it('processes modifications on stores correctly', done => {
@@ -135,6 +145,81 @@ describe('Orchestra', () => {
       })
 
     dispatcher.next(CommentStore.insert(comment))
+    dispatcher.next(PostStore.insert(post))
+    dispatcher.complete()
+  })
+
+  it('resolves dependencies to external stores', done => {
+    const dispatcher = createDispatcher()
+    const ExternalInitAction = { type: 'ExternalInitAction' }
+    const ExternalItem = new Map({ id: 'external' })
+    const ExternalStore = (state = new OrderedMap(), action) => {
+      if (action.type === 'ExternalInitAction') {
+        return state.set('external', ExternalItem)
+      }
+
+      return state
+    }
+
+    const TestStore = createStore('tests')
+      .dependsOn('dependency', test => test.get('external'), (test, ext) => test.set('external', ext))
+    const TestItem = new Map({ id: 'test', external: 'external' })
+
+    const { tests } = createOrchestra(TestStore)
+      .addReducer('dependency', ExternalStore)
+      .reduce(dispatcher)
+
+    tests
+      .last()
+      .subscribe(x => {
+        expect(x.toJS())
+          .toEqual({
+            test: {
+              ...TestItem.toJS(),
+              external: ExternalItem.toJS()
+            }
+          })
+      }, err => {
+        throw err
+      }, () => {
+        done()
+      })
+
+    dispatcher.next(ExternalInitAction)
+    dispatcher.next(TestStore.insert(TestItem))
+    dispatcher.complete()
+  })
+
+  it('reports missing ids for single item dependencies', done => {
+    const UserStore = createStore('users')
+    const PostStore = createStore('posts')
+      .dependsOn('users',
+        post => post.get('userId'),
+        (post, user) => post.set('user', user))
+
+    const userId = 'user-1'
+    const post = fromJS({ id: 'post-1', userId, title: 'Test' })
+
+    const orchestra = createOrchestra(UserStore, PostStore)
+    const dispatcher = createDispatcher()
+    const { posts } = orchestra.reduce(dispatcher)
+
+    Observable
+      .zip(UserStore.observeMissing(), posts)
+      .last()
+      .subscribe(([ a, b ]) => {
+        expect(a.toJS())
+          .toEqual([ userId ])
+        expect(b.toJS())
+          .toEqual({
+            'post-1': post.toJS()
+          })
+      }, err => {
+        throw err
+      }, () => {
+        done()
+      })
+
     dispatcher.next(PostStore.insert(post))
     dispatcher.complete()
   })
