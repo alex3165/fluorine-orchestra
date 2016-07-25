@@ -23,7 +23,7 @@
     "version": "npm run build",
     "postversion": "git push && git push --tags"
   },
-  "author": "Phil Plückthun <phil@plckthn.me> (https://github.com/philplckthun)",
+  "author": "Phil Plückthun <phil@plckthn.me> (https://github.com/philpl)",
   "bugs": {
     "url": "https://github.com/philplckthun/fluorine-orchestra/issues"
   },

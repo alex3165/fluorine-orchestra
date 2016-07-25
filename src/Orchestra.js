@@ -89,66 +89,76 @@ export class Orchestra {
       }
 
       const reducer = createReducerForStore(store)
-      const dependencies = store.getDependencyIdentifiers()
+      const dependencies = store.getDependencies()
       const post = store.getPost()
 
-      const _dependencies = dependencies.reduce((acc, dependency) => {
-        let _dependency
+      const _dependencies = Object
+        .keys(dependencies)
+        .reduce((acc, dependency) => {
+          let _dependency
 
-        if (_externals[dependency]) {
-          _dependency = _externals[dependency]
-        } else if (_stores[dependency]) {
-          _dependency = _stores[dependency]
-        } else if (stores[dependency]) {
-          _dependency = resolveStore(stores[dependency], visited)
-        } else {
-          throw new Error(`Orchestra: Failed to resolve dependency for identifier \`${dependency}\`.`)
-        }
+          if (_externals[dependency]) {
+            _dependency = _externals[dependency]
+          } else if (_stores[dependency]) {
+            _dependency = _stores[dependency]
+          } else if (stores[dependency]) {
+            _dependency = resolveStore(stores[dependency], visited)
+          } else {
+            throw new Error(`Orchestra: Failed to resolve dependency for identifier \`${dependency}\`.`)
+          }
 
-        acc[dependency] = _dependency
-        return acc
-      }, {})
+          acc[dependency] = _dependency
+          return acc
+        }, {})
 
       const _store = dispatcher.reduce(reducer)
       const res = combineStores({ ..._dependencies, [identifier]: _store })
         .map(deps => {
           // Resolve all dependencies
-          const state = dependencies.reduce((acc, dependency) => {
-            const dependencyState = deps[dependency]
-            const getter = store.useDependencyGetter.bind(store, dependency)
-            const setter = store.useDependencySetter.bind(store, dependency)
-            let missingIds = []
+          const state = Object
+            .keys(dependencies)
+            .reduce((acc, dependencyIdentifier) => {
+              const dependencyState = deps[dependencyIdentifier]
+              const { getter, setter } = dependencies[dependencyIdentifier]
 
-            const nextState = acc.map(x => {
-              const ids = getter(x)
+              // If getter exists we need to resolve dependencies per ids
+              if (getter && typeof getter === 'function') {
+                let missingIds = []
 
-              let result
-              if (typeof ids === 'string') {
-                result = dependencyState.get(ids)
+                const nextState = acc.map(x => {
+                  const ids = getter(x)
 
-                if (!result) {
-                  missingIds = missingIds.concat(ids)
-                  return x
+                  let result
+                  if (typeof ids === 'string') {
+                    result = dependencyState.get(ids)
+
+                    if (!result) {
+                      missingIds = missingIds.concat(ids)
+                      return x
+                    }
+                  } else {
+                    result = dependencyState.filter((_, key) => ids.includes(key))
+                    missingIds = missingIds
+                      .concat(ids
+                        .filter(id => !dependencyState.has(id))
+                        .toArray())
+                  }
+
+                  return setter(x, result)
+                })
+
+                // Report missing items for ids
+                const dependencyStore = stores[dependencyIdentifier]
+                if (dependencyStore) {
+                  dependencyStore._missing(new Set(missingIds), identifier)
                 }
-              } else {
-                result = dependencyState.filter((_, key) => ids.includes(key))
-                missingIds = missingIds
-                  .concat(ids
-                    .filter(id => !dependencyState.has(id))
-                    .toArray())
+
+                return nextState
               }
 
-              return setter(x, result)
-            })
-
-            // Report missing items for ids
-            if (stores.hasOwnProperty(dependency)) {
-              const dependencyStore = stores[dependency]
-              dependencyStore._missing(new Set(missingIds), identifier)
-            }
-
-            return nextState
-          }, deps[identifier])
+              // If there is no getter we just map over the items with the setter only
+              return acc.map(x => setter(x, dependencyState))
+            }, deps[identifier])
 
           return state.map(post)
         })

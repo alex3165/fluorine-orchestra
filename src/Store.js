@@ -32,7 +32,7 @@ export class Store {
 
     this.identifier = identifier
     this.opts = opts
-    this.dependencies = []
+    this.dependencies = {}
     this.hooks = {}
   }
 
@@ -43,16 +43,28 @@ export class Store {
     return this
   }
 
-  dependsOn(identifier, getter, setter) {
-    invariant(typeof identifier === 'string', 'Store: `identifier` is expected to be a string.')
-    invariant(typeof getter === 'function', 'Store: `getter` is expected to be a function.')
-    invariant(typeof setter === 'function', 'Store: `setter` is expected to be a function.')
+  dependsOn(identifier, ...args) {
+    const { dependencies } = this
 
-    this.dependencies.push({
-      identifier,
-      getter,
-      setter
-    })
+    invariant(typeof identifier === 'string', 'Store: `identifier` is expected to be a string.')
+    invariant(!dependencies[identifier], `Store: There is already an existing dependency to the store \`${identifier}\`.`)
+    invariant(args.length <= 2 && args.length >= 1, 'Store: `dependsOn` is expected to receive `setter` or `getter` and `setter`.')
+
+    let dependency
+    if (args.length === 1) {
+      const [ setter ] = args
+      invariant(typeof setter === 'function', 'Store: `setter` is expected to be a function.')
+
+      dependency = { identifier, setter }
+    } else {
+      const [ getter, setter ] = args
+      invariant(typeof getter === 'function', 'Store: `getter` is expected to be a function.')
+      invariant(typeof setter === 'function', 'Store: `setter` is expected to be a function.')
+
+      dependency = { identifier, getter, setter }
+    }
+
+    dependencies[identifier] = dependency
     return this
   }
 
@@ -71,34 +83,12 @@ export class Store {
     return this.hooks.pre || (x => x)
   }
 
-  getDependencyIdentifiers() {
+  getDependencies() {
     return this.dependencies
-      .map(x => x.identifier)
   }
 
   getPost() {
     return this.hooks.post || (x => x)
-  }
-
-  useDependencyGetter(identifier, x) {
-    const { dependencies } = this
-    const { getter } = dependencies.find(dep => dep.identifier === identifier)
-    const res = getter(x)
-
-    invariant(
-      (Iterable.isIterable(res) && res.every(id => typeof id === 'string')) ||
-      typeof res === 'string',
-      `Store: The result of ${identifier}'s getter is expected to be an id (string) or an iterable of ids.`)
-
-    return res
-  }
-
-  useDependencySetter(identifier, x, y) {
-    const { dependencies } = this
-    const { setter } = dependencies.find(dep => dep.identifier === identifier)
-    const res = toMap(setter(x, y))
-
-    return res
   }
 
   _missing(ids, identifier = null) {
