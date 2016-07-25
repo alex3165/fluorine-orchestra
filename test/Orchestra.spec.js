@@ -212,6 +212,38 @@ describe('Orchestra', () => {
     dispatcher.complete()
   })
 
+  it('resolves dependencies to external store using only a setter', done => {
+    const dispatcher = createDispatcher()
+    const ExternalStore = (state = 'test') => state
+
+    const TestStore = createStore('tests')
+      .dependsOn('dependency', (test, ext) => test.set('external', ext))
+    const TestItem = new Map({ id: 'test' })
+
+    const { tests } = createOrchestra(TestStore)
+      .addReducer('dependency', ExternalStore)
+      .reduce(dispatcher)
+
+    tests
+      .last()
+      .subscribe(x => {
+        expect(x.toJS())
+          .toEqual({
+            test: {
+              ...TestItem.toJS(),
+              external: 'test'
+            }
+          })
+      }, err => {
+        throw err
+      }, () => {
+        done()
+      })
+
+    dispatcher.next(TestStore.insert(TestItem))
+    dispatcher.complete()
+  })
+
   it('reports missing ids for single item dependencies', done => {
     const UserStore = createStore('users')
     const PostStore = createStore('posts')
