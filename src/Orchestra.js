@@ -1,6 +1,5 @@
 import invariant from 'invariant'
 import { Store } from './Store'
-import createReducerForStore from './util/createReducerForStore'
 import combineStores from './util/combineStores'
 
 import { Observable } from '@reactivex/rxjs'
@@ -88,7 +87,7 @@ export class Orchestra {
         return _stores[identifier]
       }
 
-      const reducer = createReducerForStore(store)
+      const reducer = store.getReducer()
       const dependencies = store.getDependencies()
       const post = store.getPost()
 

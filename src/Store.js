@@ -1,6 +1,7 @@
 import invariant from 'invariant'
 import { Subject } from '@reactivex/rxjs'
 import toMap from './util/toMap'
+import createReducerForStore from './util/createReducerForStore'
 
 import {
   Iterable,
@@ -89,6 +90,15 @@ export class Store {
 
   getPost() {
     return this.hooks.post || (x => x)
+  }
+
+  getReducer() {
+    if (this.reducer && typeof this.reducer === "function") {
+      return this.reducer
+    }
+
+    this.reducer = createReducerForStore(this)
+    return this.reducer
   }
 
   _missing(ids, identifier = null) {
