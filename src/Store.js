@@ -93,7 +93,7 @@ export class Store {
   }
 
   getReducer() {
-    if (this.reducer && typeof this.reducer === "function") {
+    if (this.reducer && typeof this.reducer === 'function') {
       return this.reducer
     }
 
@@ -113,8 +113,8 @@ export class Store {
     const missingIds = Object
       .keys(cache)
       .reduce((acc, key) => {
-        const ids = cache[key]
-        return ids ? acc.union(ids) : acc
+        const _set = cache[key]
+        return _set ? acc.union(_set) : acc
       }, new Set())
 
     subject.next(missingIds)
