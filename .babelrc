@@ -6,7 +6,6 @@
     "/node_modules/"
   ],
   "plugins": [
-    "closure-elimination",
     "transform-runtime"
   ]
 }

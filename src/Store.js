@@ -120,19 +120,18 @@ export class Store {
     subject.next(missingIds)
   }
 
-  _action(primitive) {
-    const { identifier } = this
-    primitive.identifier = identifier
-    return primitive
-  }
-
   insert(payload) {
     invariant(payload && (
       Iterable.isKeyed(payload) ||
       (Iterable.isIterable(payload) && payload.every && payload.every(Iterable.isKeyed))
     ), 'Store: `payload` is expected to be a keyed iterable or an iterable containing keyed iterables.')
+    const { identifier } = this
 
-    return this._action({ type: STORE_INSERT, payload })
+    return {
+      type: STORE_INSERT,
+      identifier,
+      payload
+    }
   }
 
   remove(payload) {
@@ -140,20 +139,35 @@ export class Store {
       typeof payload === 'string' ||
       (Iterable.isKeyed(payload) && typeof payload.get('id') === 'string')
     ), 'Store: `payload` is expected to be an id or a keyed iterable containing an id.')
+    const { identifier } = this
 
-    return this._action({ type: STORE_REMOVE, payload })
+    return {
+      type: STORE_REMOVE,
+      identifier,
+      payload
+    }
   }
 
   filter(selector) {
     invariant(typeof selector === 'function', 'Store: `selector` is expected to be a function.')
+    const { identifier } = this
 
-    return this._action({ type: STORE_FILTER, selector })
+    return {
+      type: STORE_FILTER,
+      identifier,
+      selector
+    }
   }
 
   update(selector) {
     invariant(typeof selector === 'function', 'Store: `selector` is expected to be a function.')
+    const { identifier } = this
 
-    return this._action({ type: STORE_UPDATE, selector })
+    return {
+      type: STORE_UPDATE,
+      identifier,
+      selector
+    }
   }
 }
 
