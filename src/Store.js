@@ -36,12 +36,10 @@ export class Store {
     this.dependencies = {}
     this.hooks = {}
 
-    for (const key in this) {
-      const val = this[key]
-      if (this.hasOwnProperty(key) && typeof val === 'function') {
-        this[key] = val.bind(this)
-      }
-    }
+    this.insert = this.insert.bind(this)
+    this.remove = this.remove.bind(this)
+    this.filter = this.filter.bind(this)
+    this.update = this.update.bind(this)
   }
 
   pre(transformer) {
