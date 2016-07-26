@@ -37,7 +37,6 @@ export class Orchestra {
     this[resultCache] = {}
     this.stores = _stores
     this.externals = {}
-    this.connections = {}
   }
 
   addReducer(identifier, reducer) {
@@ -63,7 +62,7 @@ export class Orchestra {
       return this[resultCache][dispatcher.identifier]
     }
 
-    const { connections, stores, externals } = this
+    const { stores, externals } = this
 
     const _externals = Object
       .keys(externals)
@@ -166,7 +165,6 @@ export class Orchestra {
         .publishReplay(1)
         .refCount()
 
-      // connections[identifier] = res.connect()
       _stores[identifier] = res
 
       return res

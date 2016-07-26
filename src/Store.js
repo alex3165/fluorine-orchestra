@@ -35,6 +35,13 @@ export class Store {
     this.opts = opts
     this.dependencies = {}
     this.hooks = {}
+
+    for (const key in this) {
+      const val = this[key]
+      if (this.hasOwnProperty(key) && typeof val === 'function') {
+        this[key] = val.bind(this)
+      }
+    }
   }
 
   pre(transformer) {
