@@ -126,6 +126,9 @@ export class Orchestra {
 
                 const nextState = acc.map(x => {
                   const ids = getter(x)
+                  if (!ids) {
+                    return x
+                  }
 
                   let result
                   if (typeof ids === 'string') {
