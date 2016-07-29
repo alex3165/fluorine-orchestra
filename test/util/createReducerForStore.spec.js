@@ -17,7 +17,7 @@ describe('createReducerForStore', () => {
     const reducer = createReducerForStore(createStore(TESTS))
 
     const action = { type: 'TESTING_OTHER_ACTIONS' }
-    const state = new Collection([ new Map({ id: 'a' }) ])
+    const state = new Collection({ a: new Map({ id: 'a' }) })
 
     expect(reducer(state, action))
       .toBe(state)
@@ -27,7 +27,7 @@ describe('createReducerForStore', () => {
     const reducer = createReducerForStore(createStore(TESTS))
 
     const action = { identifier: TESTS, type: 'TESTING_OTHER_ACTIONS' }
-    const state = new Collection([ new Map({ id: 'a' }) ])
+    const state = new Collection({ a: new Map({ id: 'a' }) })
 
     expect(reducer(state, action))
       .toBe(state)

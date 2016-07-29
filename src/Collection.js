@@ -1,18 +1,38 @@
 import invariant from 'invariant'
-import { OrderedMap } from 'immutable'
-import warn from './util/warn'
+import { OrderedMap, Iterable } from 'immutable'
 import createInheritable from './util/createInheritable'
 
 let EMPTY_COLLECTION
-export function Collection(obj) {
+export function Collection(obj = new OrderedMap(), dependencies = []) {
+  invariant(dependencies.every(x => typeof x === 'string'),
+    'Collection: `dependencies` is expected to contain only identifiers (strings).')
+
   this.data = OrderedMap.isOrderedMap(obj) ? obj : new OrderedMap(obj)
   this.size = this.data.size
+  this.dependencies = dependencies
 
   if (this.size === 0) {
     return EMPTY_COLLECTION || (EMPTY_COLLECTION = this)
   }
 
+  invariant(this.data.every(x => Iterable.isKeyed(x)),
+    'Collection: Expected to only contain keyed iterables.')
+
   return this
+}
+
+function wrapOrderedMap(key) {
+  return function wrapper(...args) {
+    const data = this.data[key](...args)
+    if (data === this.data) {
+      return this
+    }
+
+    const collection = new Collection(data)
+    collection.dependencies = this.dependencies
+
+    return collection
+  }
 }
 
 Collection.prototype = createInheritable(OrderedMap)
@@ -36,6 +56,42 @@ Collection.prototype.toString = function toString() {
 
 Collection.prototype.toString = function toString() {
   this.data.__toString('Collection {', '}')
+}
+
+// Returns Collection with only incomplete items
+Collection.prototype.filterComplete = function filterComplete() {
+  const { data, dependencies } = this
+
+  const _data = this.data.filter(x => x
+    .reduce((acc, key) => acc && (
+      x.has(acc) && x.get(acc) === undefined
+    ), true))
+
+  if (_data.size === data.size) {
+    return this
+  } else if (_data.size === 0) {
+    return EMPTY_COLLECTION
+  }
+
+  return new Collection(_data)
+}
+
+// Returns Collection with only complete items
+Collection.prototype.filterIncomplete = function filterIncomplete() {
+  const { data, dependencies } = this
+
+  const _data = this.data.filter(x => x
+    .reduce((acc, key) => acc && !(
+      x.has(acc) && x.get(acc) === undefined
+    ), true))
+
+  if (_data.size === data.size) {
+    return this
+  } else if (_data.size === 0) {
+    return EMPTY_COLLECTION
+  }
+
+  return new Collection(_data)
 }
 
 Collection.prototype.__ensureOwner = function __ensureOwner(ownerId) {
@@ -134,9 +190,7 @@ const wrapMethods = [
 ]
 
 for (const key of wrapMethods) {
-  Collection.prototype[key] = function wrapper(...args) {
-    return new Collection(this.data[key](...args))
-  }
+  Collection.prototype[key] = wrapOrderedMap(key)
 }
 
 const disabledMethods = [
@@ -152,7 +206,7 @@ for (const key of disabledMethods) {
   }
 }
 
-export default function createCollection(obj) {
-  return new Collection(obj)
+export default function createCollection(obj, dependencies) {
+  return new Collection(obj, dependencies)
 }
 
