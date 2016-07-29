@@ -51,20 +51,18 @@ Collection.prototype.toOrderedMap = function toString() {
 }
 
 Collection.prototype.toString = function toString() {
-  this.data.__toString('Collection {', '}')
-}
-
-Collection.prototype.toString = function toString() {
-  this.data.__toString('Collection {', '}')
+  const json = JSON.stringify(this.data.toObject())
+  return `Collection ${json}`
 }
 
 // Returns Collection with only incomplete items
 Collection.prototype.filterComplete = function filterComplete() {
   const { data, dependencies } = this
 
-  const _data = this.data.filter(x => x
-    .reduce((acc, key) => acc && (
-      x.has(acc) && x.get(acc) === undefined
+  const _data = this.data.filter(x => dependencies
+    .reduce((acc, key) => acc && !(
+      !x.keySeq().includes(key) ||
+      x.get(key) !== undefined
     ), true))
 
   if (_data.size === data.size) {
@@ -80,9 +78,10 @@ Collection.prototype.filterComplete = function filterComplete() {
 Collection.prototype.filterIncomplete = function filterIncomplete() {
   const { data, dependencies } = this
 
-  const _data = this.data.filter(x => x
-    .reduce((acc, key) => acc && !(
-      x.has(acc) && x.get(acc) === undefined
+  const _data = this.data.filter(x => dependencies
+    .reduce((acc, key) => acc && (
+      !x.keySeq().includes(key) ||
+      x.get(key) !== undefined
     ), true))
 
   if (_data.size === data.size) {
