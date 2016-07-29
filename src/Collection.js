@@ -1,5 +1,5 @@
 import invariant from 'invariant'
-import { OrderedMap, Iterable } from 'immutable'
+import { OrderedMap } from 'immutable'
 import createInheritable from './util/createInheritable'
 
 let EMPTY_COLLECTION
@@ -14,9 +14,6 @@ export function Collection(obj = new OrderedMap(), dependencies = []) {
   if (this.size === 0) {
     return EMPTY_COLLECTION || (EMPTY_COLLECTION = this)
   }
-
-  invariant(this.data.every(x => Iterable.isKeyed(x)),
-    'Collection: Expected to only contain keyed iterables.')
 
   return this
 }
