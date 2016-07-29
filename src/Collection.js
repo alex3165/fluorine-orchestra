@@ -1,5 +1,6 @@
 import invariant from 'invariant'
 import { OrderedMap } from 'immutable'
+import warn from './util/warn'
 import createInheritable from './util/createInheritable'
 
 let EMPTY_COLLECTION
@@ -84,6 +85,7 @@ const proxyMethods = [
   'min',
   'minBy',
   'flip',
+  'hashCode',
   'toJS',
   'toObject'
 ]
@@ -138,7 +140,17 @@ for (const key of wrapMethods) {
 }
 
 const disabledMethods = [
+  'asMutable',
+  'asImmutable',
+  'toArray',
+  'equals'
 ]
+
+for (const key of disabledMethods) {
+  Collection.prototype[key] = function disabled() {
+    throw new Error(`Collection: \`${key}\` is not being wrapped or inherited by Collection.`)
+  }
+}
 
 export default function createCollection(obj) {
   return new Collection(obj)
