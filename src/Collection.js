@@ -158,7 +158,9 @@ const proxyMethods = [
   'hashCode',
   'toJS',
   'toObject',
-  'toArray'
+  'toArray',
+  '__iterate',
+  '__iterator'
 ]
 
 for (const key of proxyMethods) {
