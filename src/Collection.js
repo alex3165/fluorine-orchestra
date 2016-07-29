@@ -142,7 +142,8 @@ const proxyMethods = [
   'flip',
   'hashCode',
   'toJS',
-  'toObject'
+  'toObject',
+  'toArray'
 ]
 
 for (const key of proxyMethods) {
@@ -195,7 +196,6 @@ for (const key of wrapMethods) {
 const disabledMethods = [
   'asMutable',
   'asImmutable',
-  'toArray',
   'equals'
 ]
 

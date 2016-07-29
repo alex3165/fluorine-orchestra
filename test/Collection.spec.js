@@ -30,8 +30,8 @@ describe('Collection', () => {
 
   it('throws when calling a disabled method', () => {
     expect(() => {
-      createCollection().toArray()
-    }).toThrow('Collection: `toArray` is not being wrapped or inherited by Collection.')
+      createCollection().asMutable()
+    }).toThrow('Collection: `asMutable` is not being wrapped or inherited by Collection.')
   })
 
   it('filters out incomplete keyed iterables on calling filterIncomplete', () => {
