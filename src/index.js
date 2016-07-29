@@ -1,5 +1,6 @@
 import createStore, { Store } from './Store'
 import createOrchestra, { Orchestra } from './Orchestra'
+import createCollection, { Collection } from './Collection'
 import createReducerForStore from './util/createReducerForStore'
 import combineStores from './util/combineStores'
 
@@ -10,8 +11,10 @@ Observable.prototype.distinctSelector = distinctSelector
 export {
   Store,
   Orchestra,
+  Collection,
   createStore,
   createOrchestra,
+  createCollection,
   createReducerForStore,
   combineStores
 }

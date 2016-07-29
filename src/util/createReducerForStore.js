@@ -1,10 +1,10 @@
 import invariant from 'invariant'
 import { Store } from '../Store'
+import { Collection } from '../Collection'
 import toMap from './toMap'
 
 import {
   Iterable,
-  OrderedMap,
   Map
 } from 'immutable'
 
@@ -21,7 +21,7 @@ export default function createReducerForStore(store) {
   const { identifier } = store
   const pre = store.getPre()
 
-  return function storeReducer(state = new OrderedMap(), action) {
+  return function storeReducer(state = new Collection(), action) {
     if (identifier !== action.identifier) {
       return state
     }
