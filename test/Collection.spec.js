@@ -57,4 +57,19 @@ describe('Collection', () => {
     expect(filtered.getIn([ 'a', 'id' ])).toBe('a')
     expect(filtered.has('b')).toBeFalsy()
   })
+
+  it('detects equality to Collections and OrderedMaps with equals method', () => {
+    const map = new OrderedMap({ a: 'a' })
+    const collection = new Collection({ a: 'a' })
+
+    expect(collection.equals(map)).toBeTruthy()
+  })
+
+  it('detects strict equality to Collections with strictEquals method', () => {
+    const map = new OrderedMap({ a: 'a' })
+    const collection = new Collection({ a: 'a' })
+
+    expect(collection.strictEquals(map)).toBeFalsy()
+    expect(collection.strictEquals(new Collection(map))).toBeTruthy()
+  })
 })

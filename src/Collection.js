@@ -52,6 +52,24 @@ Collection.prototype.toString = function toString() {
   return `Collection ${json}`
 }
 
+// Allows comparison between Collections and OrderedMap to be truthy
+Collection.prototype.equals = function equals(obj) {
+  return obj && (
+    (obj instanceof Collection || obj instanceof OrderedMap) &&
+    obj instanceof Collection ?
+      obj.data.hashCode() === this.data.hashCode() :
+      obj.hashCode() === this.data.hashCode()
+  )
+}
+
+// Allows comparison only between Collections and Collections to be truthy
+Collection.prototype.strictEquals = function strictEquals(obj) {
+  return obj && (
+    obj instanceof Collection &&
+    obj.data.equals(this.data)
+  )
+}
+
 // Returns Collection with only incomplete items
 Collection.prototype.filterComplete = function filterComplete() {
   const { data, dependencies } = this
@@ -192,8 +210,7 @@ for (const key of wrapMethods) {
 
 const disabledMethods = [
   'asMutable',
-  'asImmutable',
-  'equals'
+  'asImmutable'
 ]
 
 for (const key of disabledMethods) {
