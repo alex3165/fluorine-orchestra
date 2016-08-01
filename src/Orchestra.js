@@ -9,7 +9,6 @@ import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
 
 import {
   Iterable,
-  OrderedMap,
   Set
 } from 'immutable'
 
@@ -141,7 +140,7 @@ export class Orchestra {
                   } else if (Iterable.isIterable(ids) || Array.isArray(ids)) {
                     invariant(typeof ids.forEach === 'function', 'Orchestra: `ids` is expected to have a method `forEach`.')
 
-                    result = new OrderedMap().withMutations(map => {
+                    result = new Collection().withMutations(map => {
                       ids.forEach(id => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {

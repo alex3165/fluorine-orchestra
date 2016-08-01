@@ -1,223 +1,48 @@
 import invariant from 'invariant'
-import { OrderedMap } from 'immutable'
-import createInheritable from './util/createInheritable'
+import { OrderedMap } from 'extendable-immutable'
 
-let EMPTY_COLLECTION
-export function Collection(obj = new OrderedMap(), dependencies = []) {
-  invariant(dependencies.every(x => typeof x === 'string'),
-    'Collection: `dependencies` is expected to contain only identifiers (strings).')
-
-  this.data = OrderedMap.isOrderedMap(obj) ? obj : new OrderedMap(obj)
-  this.size = this.data.size
-  this.dependencies = dependencies
-
-  if (this.size === 0) {
-    return EMPTY_COLLECTION || (EMPTY_COLLECTION = this)
+export class Collection extends OrderedMap {
+  static of(val) {
+    return new Collection(val)
   }
 
-  return this
-}
-
-function wrapOrderedMap(key) {
-  return function wrapper(...args) {
-    const data = this.data[key](...args)
-    if (data === this.data) {
-      return this
-    }
-
-    const collection = new Collection(data)
-    collection.dependencies = this.dependencies
-
-    return collection
-  }
-}
-
-Collection.prototype = createInheritable(OrderedMap)
-Collection.prototype.constructor = Collection
-
-Collection.of = function of(obj) {
-  return new Collection(obj)
-}
-
-Collection.isCollection = function isCollection(obj) {
-  return obj && obj instanceof Collection
-}
-
-Collection.prototype.toOrderedMap = function toString() {
-  return this.data
-}
-
-Collection.prototype.toString = function toString() {
-  const json = JSON.stringify(this.data.toObject())
-  return `Collection ${json}`
-}
-
-// Allows comparison between Collections and OrderedMap to be truthy
-Collection.prototype.equals = function equals(obj) {
-  return obj && (
-    (obj instanceof Collection || obj instanceof OrderedMap) &&
-    obj instanceof Collection ?
-      obj.data.hashCode() === this.data.hashCode() :
-      obj.hashCode() === this.data.hashCode()
-  )
-}
-
-// Allows comparison only between Collections and Collections to be truthy
-Collection.prototype.strictEquals = function strictEquals(obj) {
-  return obj && (
-    obj instanceof Collection &&
-    obj.data.equals(this.data)
-  )
-}
-
-// Returns Collection with only incomplete items
-Collection.prototype.filterComplete = function filterComplete() {
-  const { data, dependencies } = this
-
-  const _data = this.data.filter(x => dependencies
-    .reduce((acc, key) => acc && !(
-      !x.keySeq().includes(key) ||
-      x.get(key) !== undefined
-    ), true))
-
-  if (_data.size === data.size) {
-    return this
-  } else if (_data.size === 0) {
-    return EMPTY_COLLECTION
+  static isCollection(val) {
+    return val && val instanceof Collection
   }
 
-  return new Collection(_data)
-}
+  constructor(val, dependencies = []) {
+    super(val)
 
-// Returns Collection with only complete items
-Collection.prototype.filterIncomplete = function filterIncomplete() {
-  const { data, dependencies } = this
-
-  const _data = this.data.filter(x => dependencies
-    .reduce((acc, key) => acc && (
-      !x.keySeq().includes(key) ||
-      x.get(key) !== undefined
-    ), true))
-
-  if (_data.size === data.size) {
-    return this
-  } else if (_data.size === 0) {
-    return EMPTY_COLLECTION
+    this.dependencies = dependencies
   }
 
-  return new Collection(_data)
-}
+  __wrapImmutable(...args) {
+    const res = super.__wrapImmutable(...args)
+    res.dependencies = this.dependencies
 
-Collection.prototype.__ensureOwner = function __ensureOwner(ownerId) {
-  const res = this.data.__ensureOwner(ownerId)
-  if (res === this.data) {
-    return this
+    return res
   }
 
-  return new Collection(res)
-}
+  // Returns Collection with only incomplete items
+  filterComplete() {
+    const { dependencies } = this
 
-const proxyMethods = [
-  'wasAltered',
-  'get',
-  'has',
-  'includes',
-  'first',
-  'last',
-  'getIn',
-  'hasIn',
-  'keys',
-  'values',
-  'entries',
-  'keySeq',
-  'valueSeq',
-  'entrySeq',
-  'groupBy',
-  'forEach',
-  'reduce',
-  'reduceRight',
-  'every',
-  'some',
-  'join',
-  'isEmpty',
-  'count',
-  'countBy',
-  'find',
-  'findLast',
-  'findEntry',
-  'findLastEntry',
-  'findKey',
-  'findLastKey',
-  'keyOf',
-  'lastKeyOf',
-  'max',
-  'maxBy',
-  'min',
-  'minBy',
-  'flip',
-  'hashCode',
-  'toJS',
-  'toObject',
-  'toArray',
-  '__iterate',
-  '__iterator'
-]
-
-for (const key of proxyMethods) {
-  Collection.prototype[key] = function proxy(...args) {
-    return this.data[key](...args)
+    return this.filter(x => dependencies
+      .reduce((acc, key) => acc && !(
+        !x.keySeq().includes(key) ||
+        x.get(key) !== undefined
+      ), true))
   }
-}
 
-const wrapMethods = [
-  'set',
-  'delete',
-  'clear',
-  'update',
-  'merge',
-  'mergeWith',
-  'mergeDeep',
-  'mergeDeepWith',
-  'setIn',
-  'deleteIn',
-  'updateIn',
-  'mergeIn',
-  'mergeDeepIn',
-  'slice',
-  'rest',
-  'butLast',
-  'skip',
-  'skipLast',
-  'skipWhile',
-  'skipUntil',
-  'take',
-  'takeLast',
-  'takeWhile',
-  'takeUntil',
-  'map',
-  'filter',
-  'filterNot',
-  'reverse',
-  'sort',
-  'sortBy',
-  'concat',
-  'mapKeys',
-  'mapEntries',
-  'withMutations'
-]
+  // Returns Collection with only complete items
+  filterIncomplete() {
+    const { dependencies } = this
 
-for (const key of wrapMethods) {
-  Collection.prototype[key] = wrapOrderedMap(key)
-}
-
-const disabledMethods = [
-  'asMutable',
-  'asImmutable'
-]
-
-for (const key of disabledMethods) {
-  Collection.prototype[key] = function disabled() {
-    throw new Error(`Collection: \`${key}\` is not being wrapped or inherited by Collection.`)
+    return this.filter(x => dependencies
+      .reduce((acc, key) => acc && (
+        !x.keySeq().includes(key) ||
+        x.get(key) !== undefined
+      ), true))
   }
 }
 

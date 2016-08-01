@@ -17,23 +17,6 @@ describe('Collection.of', () => {
 })
 
 describe('Collection', () => {
-  it('wraps an OrderedMap and has one reference for empty collections', () => {
-    expect(new Collection()).toBe(new Collection())
-    expect(new Collection().data).toBeA(OrderedMap)
-    expect(new Collection().toOrderedMap()).toBe(new Collection().data)
-  })
-
-  it('stringifies Collections on calling toString', () => {
-    const collection = new Collection({ a: new Map() })
-    expect(collection.toString()).toBe('Collection {"a":{}}')
-  })
-
-  it('throws when calling a disabled method', () => {
-    expect(() => {
-      createCollection().asMutable()
-    }).toThrow('Collection: `asMutable` is not being wrapped or inherited by Collection.')
-  })
-
   it('filters out incomplete keyed iterables on calling filterIncomplete', () => {
     const collection = createCollection({
       a: new Map({ id: 'a', test: undefined }),
@@ -63,13 +46,5 @@ describe('Collection', () => {
     const collection = new Collection({ a: 'a' })
 
     expect(collection.equals(map)).toBeTruthy()
-  })
-
-  it('detects strict equality to Collections with strictEquals method', () => {
-    const map = new OrderedMap({ a: 'a' })
-    const collection = new Collection({ a: 'a' })
-
-    expect(collection.strictEquals(map)).toBeFalsy()
-    expect(collection.strictEquals(new Collection(map))).toBeTruthy()
   })
 })
