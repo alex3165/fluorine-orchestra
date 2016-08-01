@@ -176,7 +176,18 @@ export class Orchestra {
               }
 
               // If there is no getter we just map over the items with the setter only
-              return acc.map(x => setter(x, dependencyState))
+              return acc.map(x => setter(x, dependencyState, missing => {
+                invariant(
+                  typeof missing === 'string' || (
+                    (Array.isArray(missing) || Set.isSet(missing)) &&
+                    missing.every(val => typeof val === 'string')
+                  ), 'Orchestra: `missing` is expected to be either an id (string) or an Array/Set containing ids.')
+
+                const dependencyStore = stores[dependencyIdentifier]
+                if (dependencyStore) {
+                  dependencyStore._missing(new Set(missing), identifier)
+                }
+              }))
             }, deps[identifier])
 
           return state.map(post)
