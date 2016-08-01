@@ -10,7 +10,8 @@ import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
 import {
   Iterable,
   OrderedMap,
-  Set
+  Set,
+  Seq
 } from 'immutable'
 
 const resultCache = Symbol('resultCache')
@@ -139,7 +140,7 @@ export class Orchestra {
                       return x
                     }
                   } else {
-                    result = ids
+                    result = new Seq(ids)
                       .reduce((map, id) => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {
