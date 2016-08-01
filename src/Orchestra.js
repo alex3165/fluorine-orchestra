@@ -140,15 +140,18 @@ export class Orchestra {
                       return x
                     }
                   } else {
-                    result = new OrderedMap(ids)
-                      .mapEntries(([ _, id ]) => {
+                    invariant(typeof ids.forEach === 'function', 'Orchestra: `ids` is expected to have a method `forEach`.')
+
+                    result = new OrderedMap().withMutations(map => {
+                      ids.forEach(id => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {
                           missingIds = missingIds.concat(id)
                         }
 
-                        return [ id, item ]
+                        map.set(id, item)
                       })
+                    })
                   }
 
                   return setter(x, result)
