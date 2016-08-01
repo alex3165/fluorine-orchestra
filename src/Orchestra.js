@@ -128,7 +128,7 @@ export class Orchestra {
                 let missingIds = []
 
                 const nextState = acc.map(x => {
-                  let ids = getter(x)
+                  const ids = getter(x)
 
                   let result
                   if (typeof ids === 'string') {
@@ -139,25 +139,23 @@ export class Orchestra {
                       return x
                     }
                   } else {
-                    if (!OrderedMap.isOrderedMap(ids)) {
-                      ids = ids.toOrderedMap ? ids.toOrderedMap() : new OrderedMap(ids)
-                    }
+                    result = ids
+                      .reduce((map, id) => {
+                        const item = dependencyState.get(id)
+                        if (item === undefined) {
+                          missingIds = missingIds.concat(id)
+                        }
 
-                    result = ids.mapEntries(([ _, id ]) => {
-                      const res = dependencyState.get(id)
-                      if (res === undefined) {
-                        missingIds = missingIds.concat(id)
-                      }
-
-                      return [ id, res ]
-                    })
+                        return map.set(id, item)
+                      }, new OrderedMap().asMutable())
+                      .asImmutable()
                   }
 
-                  return setter(x, result, function missingIdsCallback(missing) {
+                  return setter(x, result, missing => {
                     invariant(
                       typeof missing === 'string' || (
                         (Array.isArray(missing) || Set.isSet(missing)) &&
-                        missing.every(x => typeof x === 'string')
+                        missing.every(val => typeof val === 'string')
                       ), 'Orchestra: `missing` is expected to be either an id (string) or an Array/Set containing ids.')
 
                     if (Set.isSet(missing)) {
