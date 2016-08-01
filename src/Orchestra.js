@@ -1,12 +1,15 @@
 import invariant from 'invariant'
+import { Observable } from '@reactivex/rxjs'
+
 import { Store } from './Store'
+import { Collection } from './Collection'
 import combineStores from './util/combineStores'
 
-import { Observable } from '@reactivex/rxjs'
 import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
 
 import {
   Iterable,
+  OrderedMap,
   Set
 } from 'immutable'
 
@@ -125,10 +128,7 @@ export class Orchestra {
                 let missingIds = []
 
                 const nextState = acc.map(x => {
-                  const ids = getter(x)
-                  if (!ids) {
-                    return x
-                  }
+                  let ids = getter(x)
 
                   let result
                   if (typeof ids === 'string') {
@@ -139,14 +139,33 @@ export class Orchestra {
                       return x
                     }
                   } else {
-                    result = dependencyState.filter((_, key) => ids.includes(key))
-                    missingIds = missingIds
-                      .concat(ids
-                        .filter(id => !dependencyState.has(id))
-                        .toArray())
+                    if (!OrderedMap.isOrderedMap(ids)) {
+                      ids = ids.toOrderedMap ? ids.toOrderedMap() : new OrderedMap(ids)
+                    }
+
+                    result = ids.mapEntries(([ _, id ]) => {
+                      const res = dependencyState.get(id)
+                      if (res === undefined) {
+                        missingIds = missingIds.concat(id)
+                      }
+
+                      return [ id, res ]
+                    })
                   }
 
-                  return setter(x, result)
+                  return setter(x, result, function missingIdsCallback(missing) {
+                    invariant(
+                      typeof missing === 'string' || (
+                        (Array.isArray(missing) || Set.isSet(missing)) &&
+                        missing.every(x => typeof x === 'string')
+                      ), 'Orchestra: `missing` is expected to be either an id (string) or an Array/Set containing ids.')
+
+                    if (Set.isSet(missing)) {
+                      missingIds = missingIds.concat(missing.toArray())
+                    }
+
+                    missingIds = missingIds.concat(missing)
+                  })
                 })
 
                 // Report missing items for ids
