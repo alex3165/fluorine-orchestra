@@ -1,6 +1,6 @@
 {
   "name": "fluorine-orchestra",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "main": "lib/index.js",
   "jsnext:main": "es/index.js",
   "files": [
