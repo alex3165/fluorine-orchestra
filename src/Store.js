@@ -2,6 +2,7 @@ import invariant from 'invariant'
 import { Subject } from '@reactivex/rxjs'
 import toMap from './util/toMap'
 import createReducerForStore from './util/createReducerForStore'
+import { Collection } from './Collection'
 
 import {
   Iterable,
@@ -31,6 +32,7 @@ export class Store {
       cache: {}
     }
 
+    this.collection = Collection
     this.identifier = identifier
     this.opts = opts
     this.dependencies = {}
@@ -85,6 +87,13 @@ export class Store {
     return this[missing].subject.asObservable()
   }
 
+  useCollection(col) {
+    invariant(Collection.isCollection(col), 'Store: `col` is expected to be a Collection.')
+
+    this.collection = col
+    return this
+  }
+
   getPre() {
     return this.hooks.pre || (x => x)
   }
@@ -104,6 +113,10 @@ export class Store {
 
     this.reducer = createReducerForStore(this)
     return this.reducer
+  }
+
+  getCollection() {
+    return this.collection
   }
 
   _missing(ids, identifier = null) {

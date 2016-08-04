@@ -1,6 +1,5 @@
 import invariant from 'invariant'
 import { Store } from '../Store'
-import { Collection } from '../Collection'
 import toMap from './toMap'
 
 import {
@@ -22,6 +21,7 @@ export default function createReducerForStore(store) {
   const { identifier, dependencies } = store
   const pre = store.getPre()
   const depKeys = Object.keys(dependencies)
+  const Collection = store.getCollection()
   const initial = new Collection(new OrderedMap(), depKeys)
 
   return function storeReducer(state = initial, action) {

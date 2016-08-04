@@ -1,8 +1,8 @@
 import invariant from 'invariant'
 import { Observable } from '@reactivex/rxjs'
 
-import { Store } from './Store'
 import { Collection } from './Collection'
+import { Store } from './Store'
 import combineStores from './util/combineStores'
 
 import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
@@ -140,7 +140,10 @@ export class Orchestra {
                   } else if (Iterable.isIterable(ids) || Array.isArray(ids)) {
                     invariant(typeof ids.forEach === 'function', 'Orchestra: `ids` is expected to have a method `forEach`.')
 
-                    result = new Collection().withMutations(map => {
+                    const store = stores[dependencyIdentifier]
+                    const CollectionClass = store ? store.getCollection() : Collection
+
+                    result = new CollectionClass().withMutations(map => {
                       ids.forEach(id => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {
