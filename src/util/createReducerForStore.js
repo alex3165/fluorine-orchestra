@@ -44,7 +44,7 @@ export default function createReducerForStore(store) {
 
         return state.withMutations(map => {
           payload.forEach(value => {
-            const item = pre(value);
+            const item = pre(value)
             if (!item) {
               return state
             }
