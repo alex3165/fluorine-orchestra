@@ -33,14 +33,22 @@ export default function createReducerForStore(store) {
     switch (type) {
       case STORE_INSERT: {
         if (Iterable.isKeyed(payload)) {
-          const item = toMap(pre(payload))
+          const item = pre(payload)
+          if (!item) {
+            return state
+          }
+
           const id = item.get('id')
           return state.set(id, item)
         }
 
         return state.withMutations(map => {
           payload.forEach(value => {
-            const item = toMap(pre(value))
+            const item = pre(value);
+            if (!item) {
+              return state
+            }
+
             const id = item.get('id')
             map.set(id, item)
           })
@@ -48,6 +56,10 @@ export default function createReducerForStore(store) {
       }
 
       case STORE_REMOVE: {
+        if (!payload) {
+          return state
+        }
+
         if (typeof payload === 'string') {
           return state.delete(payload)
         }
@@ -57,11 +69,22 @@ export default function createReducerForStore(store) {
       }
 
       case STORE_FILTER: {
+        if (typeof selector !== 'function') {
+          return state
+        }
+
         return state.filter(selector)
       }
 
       case STORE_UPDATE: {
-        return state.map(x => pre(selector(x)))
+        if (typeof selector !== 'function') {
+          return state
+        }
+
+        return state.map(x => {
+          const item = pre(selector(x))
+          return item ? item : x
+        })
       }
 
       default: return state

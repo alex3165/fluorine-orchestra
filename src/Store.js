@@ -95,7 +95,7 @@ export class Store {
   }
 
   getPre() {
-    return this.hooks.pre || (x => x)
+    return this.hooks.pre || (x => toMap(x))
   }
 
   getDependencies() {
