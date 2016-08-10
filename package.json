@@ -44,7 +44,7 @@
   "dependencies": {
     "@reactivex/rxjs": "^5.0.0-beta.9",
     "babel-runtime": "^6.9.2",
-    "extendable-immutable": "^1.0.0",
+    "extendable-immutable": "^1.0.5",
     "invariant": "^2.2.1"
   },
   "devDependencies": {
