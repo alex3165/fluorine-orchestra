@@ -88,7 +88,7 @@ export class Store {
   }
 
   useCollection(col) {
-    invariant(typeof col === "object" && Collection.isCollection(col.prototype),
+    invariant(typeof col === 'object' && Collection.isCollection(col.prototype),
       'Store: `col` is expected to be a Collection.')
 
     this.collection = col
