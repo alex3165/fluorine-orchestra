@@ -21,8 +21,8 @@ export default function createReducerForStore(store) {
   const { identifier, dependencies } = store
   const pre = store.getPre()
   const depKeys = Object.keys(dependencies)
-  const Collection = store.getCollection()
-  const initial = new Collection(new OrderedMap(), depKeys)
+  const CollectionClass = store.getCollection()
+  const initial = new CollectionClass(new OrderedMap(), depKeys)
 
   return function storeReducer(state = initial, action) {
     if (identifier !== action.identifier) {

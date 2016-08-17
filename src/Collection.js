@@ -11,9 +11,9 @@ export class Collection extends OrderedMap {
   }
 
   constructor(val, dependencies = []) {
-    super(val)
-
-    this.dependencies = dependencies
+    return Object.assign(super(val), {
+      dependencies
+    })
   }
 
   __wrapImmutable(...args) {
