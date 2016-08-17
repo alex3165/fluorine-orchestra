@@ -32,7 +32,7 @@ export default function createReducerForStore(store) {
     const { type, payload, selector } = action
     switch (type) {
       case STORE_INSERT: {
-        if (Iterable.isKeyed(payload)) {
+        if (Map.isMap(payload)) {
           const item = pre(payload)
           if (!item) {
             return state
@@ -43,6 +43,10 @@ export default function createReducerForStore(store) {
         }
 
         return state.withMutations(map => {
+          // Deduping the incoming data by ids, since Immutable has a bug where keys
+          // have to be unique while using mutable data.
+          const track = {}
+
           payload.forEach(value => {
             const item = pre(value)
             if (!item) {
@@ -50,7 +54,10 @@ export default function createReducerForStore(store) {
             }
 
             const id = item.get('id')
-            map.set(id, item)
+            if (!track[id]) {
+              track[id] = true
+              map.set(id, item)
+            }
           })
         })
       }
@@ -58,14 +65,12 @@ export default function createReducerForStore(store) {
       case STORE_REMOVE: {
         if (!payload) {
           return state
+        } else if (Map.isMap(payload)) {
+          const id = payload.get('id')
+          return state.delete(id)
         }
 
-        if (typeof payload === 'string') {
-          return state.delete(payload)
-        }
-
-        const id = payload.get('id')
-        return state.delete(id)
+        return state.delete(payload)
       }
 
       case STORE_FILTER: {
