@@ -4,7 +4,6 @@ import toMap from './toMap'
 
 import {
   Iterable,
-  OrderedMap,
   Map
 } from 'immutable'
 
@@ -18,11 +17,9 @@ import {
 export default function createReducerForStore(store) {
   invariant(store && Store.isStore(store), 'Reducer: `store` is expected to be an Orchestra.Store.')
 
-  const { identifier, dependencies } = store
+  const identifier = store.getIdentifier()
   const pre = store.getPre()
-  const depKeys = Object.keys(dependencies)
-  const CollectionClass = store.getCollection()
-  const initial = new CollectionClass(new OrderedMap(), depKeys)
+  const initial = store.createCollection()
 
   return function storeReducer(state = initial, action) {
     if (identifier !== action.identifier) {

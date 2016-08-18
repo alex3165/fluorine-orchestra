@@ -129,5 +129,15 @@ describe('createReducerForStore', () => {
         }
       })
   })
+
+  it('has correct initial state corresponding to the store\'s collection', () => {
+    class CustomCollection extends Collection {}
+
+    const TestStore = createStore(TESTS)
+      .useCollection(CustomCollection)
+
+    const reducer = createReducerForStore(TestStore)
+    expect(reducer(undefined, {})).toBeA(CustomCollection)
+  })
 })
 

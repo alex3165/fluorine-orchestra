@@ -32,7 +32,6 @@ export class Store {
       cache: {}
     }
 
-    this.collection = Collection
     this.identifier = identifier
     this.opts = opts
     this.dependencies = {}
@@ -95,6 +94,10 @@ export class Store {
     return this
   }
 
+  getIdentifier() {
+    return this.identifier
+  }
+
   getPre() {
     return this.hooks.pre || (x => toMap(x))
   }
@@ -116,8 +119,13 @@ export class Store {
     return this.reducer
   }
 
-  getCollection() {
-    return this.collection
+  createCollection() {
+    const CollectionClass = this.collection || Collection
+
+    const res = new CollectionClass()
+    res.dependencies = Object.keys(this.dependencies)
+
+    return res
   }
 
   _missing(ids, identifier = null) {

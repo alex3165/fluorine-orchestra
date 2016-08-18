@@ -10,19 +10,6 @@ export class Collection extends OrderedMap {
     return val && val instanceof Collection
   }
 
-  constructor(val, dependencies = []) {
-    return Object.assign(super(val), {
-      dependencies
-    })
-  }
-
-  __wrapImmutable(...args) {
-    const res = super.__wrapImmutable(...args)
-    res.dependencies = this.dependencies
-
-    return res
-  }
-
   // Returns Collection with only incomplete items
   filterComplete() {
     const { dependencies } = this
@@ -44,9 +31,13 @@ export class Collection extends OrderedMap {
         x.get(key) !== undefined
       ), true))
   }
+
+  toString() {
+    return this.__toString('Collection {', '}')
+  }
 }
 
-export default function createCollection(obj, dependencies) {
-  return new Collection(obj, dependencies)
+export default function createCollection(val) {
+  return new Collection(val)
 }
 

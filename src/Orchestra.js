@@ -141,9 +141,9 @@ export class Orchestra {
                     invariant(typeof ids.forEach === 'function', 'Orchestra: `ids` is expected to have a method `forEach`.')
 
                     const store = stores[dependencyIdentifier]
-                    const CollectionClass = store ? store.getCollection() : Collection
+                    const collection = store ? store.createCollection() : Collection
 
-                    result = new CollectionClass().withMutations(map => {
+                    result = collection.withMutations(map => {
                       ids.forEach(id => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {
