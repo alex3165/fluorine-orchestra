@@ -154,7 +154,7 @@ export class Orchestra {
               // Modify every item
               const _state = state.map(x => {
                 // Get dependency ids
-                const ids = getter(x)
+                const ids = getter(x, dependencyState)
 
                 invariant(typeof ids === 'string' || Iterable.isIterable(ids) || Array.isArray(ids),
                   'Orchestra: `ids` is expected to be a string, an iterable, or an Array.')
