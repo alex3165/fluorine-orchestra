@@ -4,6 +4,8 @@ import { Observable } from '@reactivex/rxjs'
 import { Collection } from './Collection'
 import { Store } from './Store'
 import combineStores from './util/combineStores'
+import createGetter from './util/createGetter'
+import capitalizeString from './util/capitalizeString'
 
 import isDispatcher from 'fluorine-lib/lib/util/isDispatcher'
 
@@ -66,126 +68,128 @@ export class Orchestra {
 
     const { stores, externals } = this
 
+    // Assemble reduced externals
     const _externals = Object
       .keys(externals)
       .reduce((acc, key) => {
         const external = externals[key]
+
         acc[key] = dispatcher.reduce(external)
+
         return acc
       }, {})
 
-    const _stores = {}
+    const _stores = Object
+      .keys(stores)
+      .reduce((acc, key) => {
+        const store = stores[key]
+        const reducer = store.getReducer()
 
-    const resolveStore = (store, visited = {}) => {
-      const { identifier } = store
+        acc[key] = dispatcher.reduce(reducer)
 
-      if (visited[identifier]) {
-        throw new Error(`Orchestra: Failed to resolve circular dependency for identifier \`${identifier}\`.`)
-      }
+        return acc
+      }, {})
 
-      visited[identifier] = true
+    // Empty collections for convenience
+    const _emptyCollections = Object
+      .keys(stores)
+      .reduce((acc, key) => {
+        const store = stores[key]
+        const collection = store.createCollection()
 
-      if (_stores[identifier]) {
-        return _stores[identifier]
-      }
-
-      const reducer = store.getReducer()
-      const dependencies = store.getDependencies()
-      const post = store.getPost()
-
-      const _dependencies = Object
-        .keys(dependencies)
-        .reduce((acc, dependency) => {
-          let _dependency
-
-          if (_externals[dependency]) {
-            _dependency = _externals[dependency]
-          } else if (_stores[dependency]) {
-            _dependency = _stores[dependency]
-          } else if (stores[dependency]) {
-            _dependency = resolveStore(stores[dependency], visited)
-          } else {
-            throw new Error(`Orchestra: Failed to resolve dependency for identifier \`${dependency}\`.`)
-          }
-
-          acc[dependency] = _dependency
-          return acc
-        }, {})
-
-      const _store = dispatcher.reduce(reducer)
-      const res = combineStores({ ..._dependencies, [identifier]: _store })
-        .map(deps => {
-          // Resolve all dependencies
-          const state = Object
-            .keys(dependencies)
-            .reduce((acc, dependencyIdentifier) => {
-              const dependencyState = deps[dependencyIdentifier]
-              const { getter, setter } = dependencies[dependencyIdentifier]
-
-              // If getter exists we need to resolve dependencies per ids
-              if (getter && typeof getter === 'function') {
-                let missingIds = []
-
-                const nextState = acc.map(x => {
-                  const ids = getter(x)
-                  let result = undefined
-
-                  if (typeof ids === 'string') {
-                    result = dependencyState.get(ids)
-
-                    if (!result) {
-                      missingIds = missingIds.concat(ids)
-                      return x
-                    }
-                  } else if (Iterable.isIterable(ids) || Array.isArray(ids)) {
-                    invariant(typeof ids.forEach === 'function', 'Orchestra: `ids` is expected to have a method `forEach`.')
-
-                    const store = stores[dependencyIdentifier]
-                    const collection = store ? store.createCollection() : Collection
-
-                    result = collection.withMutations(map => {
-                      ids.forEach(id => {
-                        const item = dependencyState.get(id)
-                        if (item === undefined) {
-                          missingIds = missingIds.concat(id)
-                        }
-
-                        map.set(id, item)
-                      })
-                    })
-                  }
-
-                  return setter(x, result)
-                })
-
-                // Report missing items for ids
-                const dependencyStore = stores[dependencyIdentifier]
-                if (dependencyStore) {
-                  dependencyStore._missing(new Set(missingIds), identifier)
-                }
-
-                return nextState
-              }
-
-              // If there is no getter we just map over the items with the setter only
-              return acc.map(x => setter(x, dependencyState))
-            }, deps[identifier])
-
-          return state.map(post)
-        })
-        .distinctUntilChanged()
-        .publishReplay(1)
-        .refCount()
-
-      _stores[identifier] = res
-
-      return res
-    }
+        acc[key] = collection
+        return acc
+      }, {})
 
     for (const identifier in stores) {
       if (stores.hasOwnProperty(identifier)) {
-        const store = stores[identifier]
-        _stores[identifier] = resolveStore(store)
+        // Get the unresolved fluorine store
+        const fluorineStore = _stores[identifier]
+
+        // Get the post hook and all dependencies for this store
+        const orchestraStore = stores[identifier]
+        const post = orchestraStore.getPost()
+        const dependencies = orchestraStore.getDependencies()
+        const reducer = orchestraStore.getReducer()
+
+        // If the store doesn't have any dependencies we only apply the post hook
+        if (Object.keys(dependencies).length === 0) {
+          // Override the old fluorine store
+          _stores[identifier] = fluorineStore
+            .map(state => state.map(post))
+            .publishReplay(1)
+            .refCount()
+
+          continue // Honey, I'm home (early)
+        }
+
+        // Build object containing fluorine stores for all dependencies
+        const _dependencyStores = Object
+          .keys(dependencies)
+          .reduce((acc, dependency) => {
+            if (_externals[dependency]) {
+              acc[dependency] = _externals[dependency]
+            } else if (_stores[dependency]) {
+              acc[dependency] = _stores[dependency]
+            } else {
+              throw new Error(`Orchestra: Failed to resolve dependency for identifier \`${dependency}\`.`)
+            }
+
+            return acc
+          }, {})
+
+        // Override the old fluorine store
+        _stores[identifier] = combineStores({ ..._dependencyStores, [identifier]: fluorineStore })
+          .map(deps => Object
+            .keys(dependencies)
+            .reduce((state, dependencyIdentifier) => {
+              // Retrieve the dependency getter, setter and its state
+              const dependencyState = deps[dependencyIdentifier]
+              const { getter, setter } = dependencies[dependencyIdentifier]
+              const emptyCollection = _emptyCollections[dependencyIdentifier]
+              const dependencyName = capitalizeString(dependencyIdentifier)
+
+              const missingIds = []
+
+              // Modify every item
+              const _state = state.map(x => {
+                // Get dependency ids
+                const ids = getter(x)
+
+                invariant(typeof ids === 'string' || Iterable.isIterable(ids) || Array.isArray(ids),
+                  'Orchestra: `ids` is expected to be a string, an iterable, or an Array.')
+
+                // Collect missing ids from dependency item
+                if (typeof ids === 'string') {
+                  missingIds.push(ids)
+                } else {
+                  ids.forEach(id => {
+                    if (!dependencyState.get(id)) {
+                      missingIds.push(id)
+                    }
+                  })
+                }
+
+                const _get = createGetter(dependencyState, emptyCollection, ids)
+                if (setter) {
+                  return setter(x, _get)
+                }
+
+                x['get' + dependencyName] = _get
+                return x
+              })
+
+              // Report missing ids
+              const dependencyStore = stores[dependencyIdentifier]
+              if (dependencyStore) {
+                dependencyStore._missing(new Set(missingIds), identifier)
+              }
+
+              return _state
+            }, deps[identifier])
+            .map(post))
+          .publishReplay(1)
+          .refCount()
       }
     }
 

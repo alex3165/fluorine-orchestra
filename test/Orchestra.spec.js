@@ -37,20 +37,10 @@ describe('Orchestra', () => {
   it('throws if a dependency is missing', () => {
     expect(() => {
       const TestStore = createStore('tests')
-        .dependsOn('nothing', () => '', x => x)
+        .dependsOn('nothing', () => '')
+
       createOrchestra(TestStore).reduce(createDispatcher())
     }).toThrow('Orchestra: Failed to resolve dependency for identifier `nothing`.')
-  })
-
-  it('throws if a circular dependency is found', () => {
-    expect(() => {
-      const StoreA = createStore('a')
-        .dependsOn('b', () => '', x => x)
-      const StoreB = createStore('b')
-        .dependsOn('a', () => '', x => x)
-
-      createOrchestra(StoreA, StoreB).reduce(createDispatcher())
-    }).toThrow('Orchestra: Failed to resolve circular dependency for identifier `a`.')
   })
 
   it('caches the reduced stores and outputs the same result on another call', () => {
@@ -91,13 +81,12 @@ describe('Orchestra', () => {
   it('resolves multiple dependencies to a single store correctly', () => {
     const TestStore = createStore('tests')
     const AStore = createStore('a')
-      .dependsOn('tests', a => a.get('test'), (a, test) => a.set('test', test))
+      .dependsOn('tests', a => a.get('test'))
     const BStore = createStore('b')
-      .dependsOn('tests', b => b.get('test'), (b, test) => b.set('test', test))
+      .dependsOn('tests', b => b.get('test'))
 
     const orchestra = createOrchestra(AStore, BStore, TestStore)
-    const dispatcher = createDispatcher()
-    orchestra.reduce(dispatcher)
+    orchestra.reduce(createDispatcher())
   })
 
   it('resolves dependencies to a single other item', done => {
@@ -105,7 +94,10 @@ describe('Orchestra', () => {
     const PostStore = createStore('posts')
       .dependsOn('users',
         post => post.get('userId'),
-        (post, user) => post.set('user', user))
+        (post, getUser) => {
+          post.getUser = getUser
+          return post
+        })
 
     const user = new Map({ id: 'user-1', name: 'Tester' })
     const post = new Map({ id: 'post-1', userId: 'user-1', title: 'Test' })
@@ -116,13 +108,11 @@ describe('Orchestra', () => {
 
     posts
       .last()
-      .subscribe(x => {
-        expect(x.toJS())
-          .toEqual({
-            'post-1': post
-              .set('user', user)
-              .toJS()
-          })
+      .subscribe(_posts => {
+        const x = _posts.get('post-1')
+
+        expect(x.getUser).toBeA('function')
+        expect(x.getUser()).toBe(user)
       }, err => {
         throw err
       }, () => {
@@ -137,9 +127,7 @@ describe('Orchestra', () => {
   it('resolves dependencies to other items', done => {
     const CommentStore = createStore('comments')
     const PostStore = createStore('posts')
-      .dependsOn('comments',
-        post => post.get('commentIds'),
-        (post, comments) => post.set('comments', comments))
+      .dependsOn('comments', post => post.get('commentIds'))
 
     const comment = new Map({ id: 'comment-1', text: 'Test' })
     const post = fromJS({ id: 'post-1', commentIds: [ 'comment-1' ], title: 'Test' })
@@ -150,16 +138,13 @@ describe('Orchestra', () => {
 
     posts
       .last()
-      .subscribe(x => {
-        expect(x.toJS())
-          .toEqual({
-            'post-1': {
-              ...post.toJS(),
-              comments: {
-                'comment-1': comment.toJS()
-              }
-            }
-          })
+      .subscribe(_posts => {
+        const x = _posts.get('post-1')
+
+        expect(x.getComments).toBeA('function')
+        expect(x.getComments().toJS()).toEqual({
+          'comment-1': comment.toJS()
+        })
       }, err => {
         throw err
       }, () => {
@@ -184,7 +169,7 @@ describe('Orchestra', () => {
     }
 
     const TestStore = createStore('tests')
-      .dependsOn('dependency', test => test.get('external'), (test, ext) => test.set('external', ext))
+      .dependsOn('dependency', test => test.get('external'))
     const TestItem = new Map({ id: 'test', external: 'external' })
 
     const { tests } = createOrchestra(TestStore)
@@ -193,14 +178,11 @@ describe('Orchestra', () => {
 
     tests
       .last()
-      .subscribe(x => {
-        expect(x.toJS())
-          .toEqual({
-            test: {
-              ...TestItem.toJS(),
-              external: ExternalItem.toJS()
-            }
-          })
+      .subscribe(_tests => {
+        const x = _tests.get('test')
+
+        expect(x.getDependency).toBeA('function')
+        expect(x.getDependency().toJS()).toEqual(ExternalItem.toJS())
       }, err => {
         throw err
       }, () => {
@@ -212,44 +194,10 @@ describe('Orchestra', () => {
     dispatcher.complete()
   })
 
-  it('resolves dependencies to external store using only a setter', done => {
-    const dispatcher = createDispatcher()
-    const ExternalStore = (state = 'test') => state
-
-    const TestStore = createStore('tests')
-      .dependsOn('dependency', (test, ext) => test.set('external', ext))
-    const TestItem = new Map({ id: 'test' })
-
-    const { tests } = createOrchestra(TestStore)
-      .addReducer('dependency', ExternalStore)
-      .reduce(dispatcher)
-
-    tests
-      .last()
-      .subscribe(x => {
-        expect(x.toJS())
-          .toEqual({
-            test: {
-              ...TestItem.toJS(),
-              external: 'test'
-            }
-          })
-      }, err => {
-        throw err
-      }, () => {
-        done()
-      })
-
-    dispatcher.next(TestStore.insert(TestItem))
-    dispatcher.complete()
-  })
-
   it('reports missing ids for single item dependencies', done => {
     const UserStore = createStore('users')
     const PostStore = createStore('posts')
-      .dependsOn('users',
-        post => post.get('userId'),
-        (post, user) => post.set('user', user))
+      .dependsOn('users', post => post.get('userId'))
 
     const userId = 'user-1'
     const post = fromJS({ id: 'post-1', userId, title: 'Test' })
@@ -262,12 +210,10 @@ describe('Orchestra', () => {
       .zip(UserStore.observeMissing(), posts)
       .last()
       .subscribe(([ a, b ]) => {
-        expect(a.toJS())
-          .toEqual([ userId ])
-        expect(b.toJS())
-          .toEqual({
-            'post-1': post.toJS()
-          })
+        expect(a.toJS()).toEqual([ userId ])
+        expect(b.toJS()).toEqual({
+          'post-1': post.toJS()
+        })
       }, err => {
         throw err
       }, () => {

@@ -50,28 +50,16 @@ export class Store {
     return this
   }
 
-  dependsOn(identifier, ...args) {
+  dependsOn(identifier, getter, setter) {
     const { dependencies } = this
 
     invariant(typeof identifier === 'string', 'Store: `identifier` is expected to be a string.')
+    invariant(typeof getter === 'function', 'Store: `getter` is expected to be a function.')
+    invariant(setter === undefined || typeof setter === 'function', 'Store: `setter` is expected to be a function.')
     invariant(!dependencies[identifier], `Store: There is already an existing dependency to the store \`${identifier}\`.`)
-    invariant(args.length <= 2 && args.length >= 1, 'Store: `dependsOn` is expected to receive `setter` or `getter` and `setter`.')
 
-    let dependency
-    if (args.length === 1) {
-      const [ setter ] = args
-      invariant(typeof setter === 'function', 'Store: `setter` is expected to be a function.')
+    dependencies[identifier] = { identifier, getter, setter }
 
-      dependency = { identifier, setter }
-    } else {
-      const [ getter, setter ] = args
-      invariant(typeof getter === 'function', 'Store: `getter` is expected to be a function.')
-      invariant(typeof setter === 'function', 'Store: `setter` is expected to be a function.')
-
-      dependency = { identifier, getter, setter }
-    }
-
-    dependencies[identifier] = dependency
     return this
   }
 
