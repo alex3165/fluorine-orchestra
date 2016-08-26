@@ -44,8 +44,9 @@
   "dependencies": {
     "@reactivex/rxjs": "^5.0.0-beta.9",
     "babel-runtime": "^6.9.2",
-    "extendable-immutable": "^1.0.11",
-    "invariant": "^2.2.1"
+    "extendable-immutable": "^1.0.13",
+    "invariant": "^2.2.1",
+    "immutable": "^3.8.1"
   },
   "devDependencies": {
     "babel-cli": "^6.10.1",
@@ -63,7 +64,8 @@
     "fluorine-lib": "^4.1.4",
     "immutable": "^3.8.1",
     "mocha": "^3.0.0",
-    "nyc": "^7.0.0"
+    "nyc": "^7.0.0",
+    "react": "^15.3.1"
   },
   "peerDependencies": {
     "fluorine-lib": ">= 4.1.4",

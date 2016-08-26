@@ -4,7 +4,9 @@ import toMap from './toMap'
 
 import {
   Iterable,
-  Map
+  Map,
+  OrderedMap,
+  OrderedSet
 } from 'immutable'
 
 import {
@@ -26,7 +28,7 @@ export default function createReducerForStore(store) {
       return state
     }
 
-    const { type, payload, selector } = action
+    const { type, payload, selector, groupId } = action
     switch (type) {
       case STORE_INSERT: {
         if (Map.isMap(payload)) {
@@ -36,12 +38,17 @@ export default function createReducerForStore(store) {
           }
 
           const id = item.get('id')
-          return state.set(id, item)
+
+          const res = state.set(id, item)
+          if (groupId) {
+            return res.addIdToGroup(groupId, id)
+          }
+
+          return res
         }
 
         return state.withMutations(map => {
-          // Deduping the incoming data by ids, since Immutable has a bug where keys
-          // have to be unique while using mutable data.
+          // Deduping the incoming data by ids and tracking the ids
           const track = {}
 
           payload.forEach(value => {
@@ -56,6 +63,11 @@ export default function createReducerForStore(store) {
               map.set(id, item)
             }
           })
+
+          if (groupId) {
+            const ids = Object.keys(track)
+            map.addIdsToGroup(groupId, new OrderedSet(ids))
+          }
         })
       }
 

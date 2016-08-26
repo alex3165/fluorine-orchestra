@@ -135,17 +135,21 @@ export class Store {
     subject.next(missingIds)
   }
 
-  insert(payload) {
+  insert(payload, groupId) {
     invariant(payload && (
       Iterable.isKeyed(payload) ||
       (Iterable.isIterable(payload) && payload.every && payload.every(Iterable.isKeyed))
     ), 'Store: `payload` is expected to be a keyed iterable or an iterable containing keyed iterables.')
+    invariant(!groupId || typeof groupId === 'string',
+      'Store: `groupId` is expected to be an id (string).')
+
     const { identifier } = this
 
     return {
       type: STORE_INSERT,
       identifier,
-      payload
+      payload,
+      groupId
     }
   }
 
