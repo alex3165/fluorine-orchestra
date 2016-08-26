@@ -38,7 +38,7 @@ export class Collection extends OrderedMap {
     const xGroups = x[groupsSymbol] || {}
     const groups = res[groupsSymbol] || {}
 
-    for (groupId in xGroups) {
+    for (const groupId in xGroups) {
       if (xGroups.hasOwnProperty(groupId)) {
         const _xGroup = xGroups[groupId] || new OrderedSet()
         const _group = groups[groupId] || new OrderedSet()
