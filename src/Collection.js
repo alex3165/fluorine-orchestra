@@ -13,11 +13,11 @@ export class Collection extends OrderedMap {
     return val && val instanceof Collection
   }
 
-  __wrapImmutable(x, ...args) {
-    const res = super.__wrapImmutable(x, ...args)
+  __wrapImmutable(...args) {
+    const res = super.__wrapImmutable(...args)
 
     if (res.size) {
-      res[groupsSymbol] = x[groupsSymbol] || {}
+      res[groupsSymbol] = this[groupsSymbol] || {}
     } else {
       res[groupsSymbol] = {}
     }
