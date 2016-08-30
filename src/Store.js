@@ -147,7 +147,7 @@ export class Store {
     subject.next(missingIds)
   }
 
-  insert(payload) {
+  insert(payload, groupId) {
     invariant(payload && (
       Iterable.isKeyed(payload) ||
       (Iterable.isIterable(payload) && payload.every && payload.every(Iterable.isKeyed))
@@ -157,7 +157,8 @@ export class Store {
     return {
       type: STORE_INSERT,
       identifier,
-      payload
+      payload,
+      groupId
     }
   }
 

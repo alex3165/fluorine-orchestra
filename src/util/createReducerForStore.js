@@ -26,7 +26,7 @@ export default function createReducerForStore(store) {
       return state
     }
 
-    const { type, payload, selector } = action
+    const { type, payload, groupId, selector } = action
     switch (type) {
       case STORE_INSERT: {
         if (Map.isMap(payload)) {
@@ -36,10 +36,12 @@ export default function createReducerForStore(store) {
           }
 
           const id = item.get('id')
-          return state.set(id, item)
+          const res = state.set(id, item)
+
+          return groupId ? res.addIdToGroup(groupId, id) : res
         }
 
-        return state.withMutations(map => {
+        const res = state.withMutations(map => {
           // Deduping the incoming data by ids, since Immutable has a bug where keys
           // have to be unique while using mutable data.
           const track = {}
@@ -57,6 +59,8 @@ export default function createReducerForStore(store) {
             }
           })
         })
+
+        return groupId ? res.addIdsToGroup(groupId, Object.keys(track)) : res
       }
 
       case STORE_REMOVE: {

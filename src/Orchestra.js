@@ -147,7 +147,7 @@ export class Orchestra {
                       ids.forEach(id => {
                         const item = dependencyState.get(id)
                         if (item === undefined) {
-                          missingIds = missingIds.concat(id)
+                          missingIds.push(id)
                         }
 
                         map.set(id, item)
