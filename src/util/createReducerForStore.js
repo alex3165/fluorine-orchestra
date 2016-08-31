@@ -4,7 +4,8 @@ import toMap from './toMap'
 
 import {
   Iterable,
-  Map
+  Map,
+  Set
 } from 'immutable'
 
 import {
@@ -41,10 +42,11 @@ export default function createReducerForStore(store) {
           return groupId ? res.addIdToGroup(groupId, id) : res
         }
 
+        // Deduping the incoming data by ids, since Immutable has a bug where keys
+        // have to be unique while using mutable data.
+        const track = {}
+
         const res = state.withMutations(map => {
-          // Deduping the incoming data by ids, since Immutable has a bug where keys
-          // have to be unique while using mutable data.
-          const track = {}
 
           payload.forEach(value => {
             const item = pre(value)
@@ -60,7 +62,7 @@ export default function createReducerForStore(store) {
           })
         })
 
-        return groupId ? res.addIdsToGroup(groupId, Object.keys(track)) : res
+        return groupId ? res.addIdsToGroup(groupId, new Set(Object.keys(track))) : res
       }
 
       case STORE_REMOVE: {
