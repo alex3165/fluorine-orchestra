@@ -4,7 +4,8 @@ import toMap from './toMap'
 
 import {
   Iterable,
-  Map
+  Map,
+  Set
 } from 'immutable'
 
 import {
@@ -61,7 +62,7 @@ export default function createReducerForStore(store) {
           })
         })
 
-        return groupId ? res.addIdsToGroup(groupId, Object.keys(track)) : res
+        return groupId ? res.addIdsToGroup(groupId, new Set(Object.keys(track))) : res
       }
 
       case STORE_REMOVE: {
