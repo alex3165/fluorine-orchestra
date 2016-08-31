@@ -41,10 +41,11 @@ export default function createReducerForStore(store) {
           return groupId ? res.addIdToGroup(groupId, id) : res
         }
 
+        // Deduping the incoming data by ids, since Immutable has a bug where keys
+        // have to be unique while using mutable data.
+        const track = {}
+
         const res = state.withMutations(map => {
-          // Deduping the incoming data by ids, since Immutable has a bug where keys
-          // have to be unique while using mutable data.
-          const track = {}
 
           payload.forEach(value => {
             const item = pre(value)
