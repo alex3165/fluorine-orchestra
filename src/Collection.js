@@ -53,7 +53,6 @@ export class Collection extends OrderedMap {
   addIdToGroup(groupId, id) {
     invariant(typeof groupId === 'string', 'Collection: `groupId` is expected to be an id (string).')
     invariant(typeof id === 'string', 'Collection: `id` is expected to be an id (string).')
-    invariant(this.size && this.has(id), 'Collection: `id` is expected to be part of this collection.')
 
     const groups = this[groupsSymbol]
 
@@ -67,8 +66,6 @@ export class Collection extends OrderedMap {
     invariant(typeof groupId === 'string', 'Collection: `groupId` is expected to be an id (string).')
     invariant(Set.isSet(ids) && ids.every(x => typeof x === 'string'),
       'Collection: `ids` is expected to be a Set containing ids (string).')
-    invariant(this.size && ids.every(x => this.has(x)),
-      'Collection: `ids` is expected to contain ids that are part of this collection.')
 
     const groups = this[groupsSymbol]
 
