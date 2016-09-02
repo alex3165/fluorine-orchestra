@@ -17,7 +17,8 @@ export class Collection extends OrderedMap {
     const res = super.__wrapImmutable(...args)
 
     if (res.size) {
-      res[groupsSymbol] = this[groupsSymbol] || {}
+      const groups = this[groupsSymbol] || {}
+      res[groupsSymbol] = { ...groups }
     } else {
       res[groupsSymbol] = {}
     }
