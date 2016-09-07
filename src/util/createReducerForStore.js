@@ -46,7 +46,7 @@ export default function createReducerForStore(store) {
         // have to be unique while using mutable data.
         const track = {}
 
-        const res = state.asMutable()
+        let res = state.asMutable()
 
         payload.forEach(value => {
           const item = pre(value)
@@ -60,6 +60,8 @@ export default function createReducerForStore(store) {
             res.set(id, item)
           }
         })
+
+        res = res.asImmutable()
 
         return groupId ? res.addIdsToGroup(groupId, new Set(Object.keys(track))) : res
       }
