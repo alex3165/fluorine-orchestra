@@ -46,20 +46,19 @@ export default function createReducerForStore(store) {
         // have to be unique while using mutable data.
         const track = {}
 
-        const res = state.withMutations(map => {
+        const res = state.asMutable()
 
-          payload.forEach(value => {
-            const item = pre(value)
-            if (!item) {
-              return state
-            }
+        payload.forEach(value => {
+          const item = pre(value)
+          if (!item) {
+            return state
+          }
 
-            const id = item.get('id')
-            if (!track[id]) {
-              track[id] = true
-              map.set(id, item)
-            }
-          })
+          const id = item.get('id')
+          if (!track[id]) {
+            track[id] = true
+            res.set(id, item)
+          }
         })
 
         return groupId ? res.addIdsToGroup(groupId, new Set(Object.keys(track))) : res
